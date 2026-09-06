@@ -1,0 +1,39 @@
+name: Java CI
+
+# Run on every push to any branch and on pull requests targeting main
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Build and Test (Java 21)
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Set up the Java version declared in pom.xml
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven   # cache ~/.m2 between runs to speed up subsequent builds
+
+      # 3. Compile sources and run all JUnit 5 tests
+      #    'verify' runs compile -> test -> package; fail the job on any error
+      - name: Build and run tests
+        run: mvn --batch-mode verify
+
+      # 4. Upload the Surefire test report so it's visible in the Actions UI
+      - name: Upload test report
+        if: always()   # upload even if tests fail so you can see what broke
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
